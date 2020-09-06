@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Registration from '../pages/Registration'
-import Settings from '../pages/Settings'
+import Game from '../pages/Game/index'
+import Settings from '../pages/Settings/index'
+import Registration from '../pages/Registration/index'
 
 Vue.use(VueRouter)
 
@@ -10,7 +11,8 @@ const router = new VueRouter({
     base: '/',
     routes: [
         { path: '/', component: Registration },
-        { path: '/settings', component: Settings }
+        { path: '/settings', component: Settings },
+        { path: '/game', component: Game }
     ]
 })
 

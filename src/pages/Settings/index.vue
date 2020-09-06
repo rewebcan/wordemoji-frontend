@@ -1,9 +1,9 @@
 <template>
-  <div class="main-wrapper columns">
+  <div class="main-container columns">
     <div class="column is-4 pb-0 pt-0">
       <div class="custom-container flex-container has-background-white">
         <div class="avatars-container">
-          <img src="../assets/female-singer.png" alt="avatar">
+          <img src="images/female-singer.png" alt="avatar">
           <b-field class="mt-2">
             <b-input placeholder="Name..." disabled></b-input>
           </b-field>
@@ -33,16 +33,23 @@
     </div>
     <div class="column is-5 pt-0 pr-0 pb-0 pl-0">
       <div class="custom-container flex-container has-background-white">
-        <div class="players-list-container has-background-primary-light"></div>
+        <div class="player-list-container">
+          <player
+              v-for="(player, index) in players"
+              :key="index"
+              :player="player"
+              @playerRemoved="removePlayer"/>
+        </div>
         <div class="players-footer-container flex-container">
           <p class="copy-link-text">Linki kopyala ve arkadaşlarına gönder. Eğlence başlasın!</p>
           <b-field>
-            <b-input expanded placeholder="Search..."
-                     type="search"
-                     icon="magnify">
+            <b-input
+                expanded placeholder="Search..."
+                type="is-info"
+                icon="magnify">
             </b-input>
             <p class="control">
-              <button class="button is-fullwidth is-primary">Search</button>
+              <button class="button is-fullwidth is-info">Search</button>
             </p>
           </b-field>
         </div>
@@ -55,43 +62,59 @@
 </template>
 
 <script>
-export default {
-  data() {
-    return {}
-  },
-  computed: {
-    swiper() {
-      return this.$refs.mySwiper.$swiper
+  import { mapGetters, mapMutations } from 'vuex'
+  import Player from "./Components/player"
+
+  export default {
+    components: {
+      Player
+    },
+
+    data() {
+      return {}
+    },
+
+    computed: {
+      ...mapGetters({players: 'players'}),
+
+      swiper() {
+        return this.$refs.mySwiper.$swiper
+      }
+    },
+
+    methods: {
+      ...mapMutations(['removePlayer']),
     }
   }
-}
 </script>
 
 <style scoped>
-.main-wrapper {
-  height: 500px;
-}
-.custom-container {
-  padding: 10px;
-  height: 100%;
-}
-.flex-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-.avatars-container {
-  height: 100%;
-  padding-top: 30px;
-}
-.players-list-container {
-  height: 80%;
-}
-.players-footer-container {
-  height: 20%;
-}
-.copy-link-text {
-  font-size: 18px;
-  color: rgb(271,102,255);
-}
+  .main-container {
+    height: 500px;
+  }
+  .custom-container {
+    padding: 10px;
+    height: 100%;
+  }
+  .flex-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .avatars-container {
+    height: 100%;
+    padding-top: 30px;
+  }
+  .player-list-container {
+    height: 80%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .players-footer-container {
+    height: 20%;
+  }
+  .copy-link-text {
+    font-size: 18px;
+    color: #1b66ff;
+  }
 </style>

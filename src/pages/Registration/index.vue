@@ -1,17 +1,17 @@
 <template>
-  <div class="main-wrapper columns">
+  <div class="main-container columns">
     <div class="column setup-container is-4 pb-0 pt-0">
       <div class="setup-sub-container has-background-white">
         <div class="avatars-container">
           <swiper class="avatars-container" ref="mySwiper" :options="swiperOption">
             <swiper-slide>
               <div class="container has-text-centered">
-                <img src="../assets/female-singer.png" alt="avatar">
+                <img src="images/female-singer.png" alt="avatar">
               </div>
             </swiper-slide>
             <swiper-slide>
               <div class="container has-text-centered">
-                <img src="../assets/man-supervillain.png" alt="avatar">
+                <img src="images/man-supervillain.png" alt="avatar">
               </div>
             </swiper-slide>
           </swiper>
@@ -59,7 +59,7 @@
 </script>
 
 <style scoped>
-  .main-wrapper {
+  .main-container {
     height: 500px;
   }
   .setup-container {
