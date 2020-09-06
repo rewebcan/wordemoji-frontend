@@ -5,7 +5,11 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store({
     state: {
-        currentPlayer: {},
+        currentPlayer: {
+            name: '',
+            avatar: '',
+            isMaster: false
+        },
         players: [
             {
                 name: 'Burak Başar',
@@ -47,7 +51,14 @@ const store = new Vuex.Store({
                 avatar: 'images/farmer.png',
                 points: 150,
             }
-        ]
+        ],
+        game: {
+            roundCount: 0,
+            roundTime: 0,
+            roomId: '',
+            currentRound: 0,
+            currentPuzzle: '',
+        }
     },
 
     getters: {
