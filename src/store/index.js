@@ -1,57 +1,22 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import createPersistedState from 'vuex-persistedstate';
 
 Vue.use(Vuex)
 
 const store = new Vuex.Store({
+    plugins: [
+        createPersistedState({
+            paths: ['currentPlayer']
+        }),
+    ],
     state: {
         currentPlayer: {
             name: '',
             avatar: '',
             isMaster: false
         },
-        players: [
-            {
-                name: 'Burak Başar',
-                avatar: 'images/farmer.png',
-                points: 100,
-            },
-            {
-                name: 'Recep Can',
-                avatar: 'images/man-supervillain.png',
-                points: 150,
-            },
-            {
-                name: 'Batuhan Kara',
-                avatar: 'images/female-singer.png',
-                points: 100,
-            },
-            {
-                name: 'Burak Başar',
-                avatar: 'images/farmer.png',
-                points: 150,
-            },
-            {
-                name: 'Burak Başar',
-                avatar: 'images/farmer.png',
-                points: 150,
-            },
-            {
-                name: 'Recep Can',
-                avatar: 'images/man-supervillain.png',
-                points: 150,
-            },
-            {
-                name: 'Batuhan Kara',
-                avatar: 'images/female-singer.png',
-                points: 150,
-            },
-            {
-                name: 'Burak Başar',
-                avatar: 'images/farmer.png',
-                points: 150,
-            }
-        ],
+        players: {},
         game: {
             roundCount: 0,
             roundTime: 0,
@@ -64,6 +29,7 @@ const store = new Vuex.Store({
     getters: {
         currentPlayer: state => state.currentPlayer,
         players: state => state.players,
+        game: state => state.game,
     },
 
     mutations: {
@@ -71,8 +37,24 @@ const store = new Vuex.Store({
             state.currentPlayer = player
         },
 
+        addPlayer (state, player) {
+            state.players[player.soid] = player
+        },
+
+        addPlayers (state, players) {
+            for (const player of players) {
+                state.players[player.soid] = player
+            }
+        },
+
         removePlayer (state, deletedPlayer) {
-            state.players = state.players.filter(player => player !== deletedPlayer)
+            // eslint-disable-next-line no-unused-vars
+            const { [deletedPlayer]: _, ...players } = state.players;
+            state.players = players
+        },
+
+        configureRoom (state, room) {
+            state.game = {...state.game, ...room}
         }
     }
 })

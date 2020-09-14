@@ -3,31 +3,39 @@
     <div class="column is-4 pb-0 pt-0">
       <div class="custom-container flex-container has-background-white">
         <div class="avatars-container">
-          <img src="images/female-singer.png" alt="avatar">
+          <img :src="currentPlayer.avatar" alt="avatar" />
           <b-field class="mt-2">
-            <b-input placeholder="Name..." disabled></b-input>
+            <b-input :placeholder="currentPlayer.name" disabled></b-input>
           </b-field>
         </div>
         <div class="actions">
-          <b-field
-              label="Settings" class="has-text-left">
-            <b-select placeholder="Rounds Numbers" expanded>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
+          <b-field label="Round Sayısı" class="has-text-left">
+            <b-select
+              v-model.lazy="settingsForm.roundCount"
+              expanded
+              :disabled="!currentPlayer.isMaster"
+            >
               <option value="6">6</option>
+              <option value="9">9</option>
+              <option value="12">12</option>
             </b-select>
           </b-field>
-          <b-field>
-            <b-select placeholder="Rounds Times" expanded>
-              <option value="flint">2 min</option>
-              <option value="silver">5 min</option>
-              <option value="silver">10 min</option>
+          <b-field label="Round Süresi" class="has-text-left">
+            <b-select
+              v-model.lazy="settingsForm.roundTime"
+              expanded
+              :disabled="!currentPlayer.isMaster"
+            >
+              <option value="75">75</option>
+              <option value="90">90</option>
+              <option value="120">120</option>
             </b-select>
           </b-field>
-          <b-button type="button is-info is-fullwidth">Start The Game</b-button>
+          <b-button
+            type="button is-info is-fullwidth"
+            @click="startGame"
+            :disabled="!currentPlayer.isMaster || Object.keys(players).length === 0"
+          >Oyunu Başlat</b-button>
         </div>
       </div>
     </div>
@@ -35,22 +43,27 @@
       <div class="custom-container flex-container has-background-white">
         <div class="player-list-container">
           <player
-              v-for="(player, index) in players"
-              :key="index"
-              :player="player"
-              @playerRemoved="removePlayer"/>
+            v-for="(player, index) of players"
+            :key="index"
+            :player="player"
+            :isMaster="currentPlayer.isMaster"
+            v-show="currentPlayer.soid !== player.soid"
+            @player-removed="wrapRemovePlayer"
+          />
         </div>
         <div class="players-footer-container flex-container">
-          <p class="copy-link-text">Linki kopyala ve arkadaşlarına gönder. Eğlence başlasın!</p>
-          <b-field>
+          <p
+            class="copy-link-text mb-0 pb-0"
+          >Linki kopyala ve arkadaşlarına gönder. Eğlence başlasın!</p>
+          <b-field :type="copied ? 'is-success' : ''">
             <b-input
-                expanded placeholder="Search..."
-                type="is-info"
-                icon="magnify">
-            </b-input>
-            <p class="control">
-              <button class="button is-fullwidth is-info">Search</button>
-            </p>
+              @focus="copyRoomUrl"
+              expanded
+              placeholder="Search..."
+              :value="roomUrl"
+              readonly
+              :icon="copied ? 'clipboard-check': 'clipboard'"
+            ></b-input>
           </b-field>
         </div>
       </div>
@@ -62,59 +75,166 @@
 </template>
 
 <script>
-  import { mapGetters, mapMutations } from 'vuex'
-  import Player from "./Components/player"
+import { mapGetters, mapMutations } from "vuex";
+import Player from "./Components/player";
+import axios from "../../services/axios";
 
-  export default {
-    components: {
-      Player
+export default {
+  components: {
+    Player,
+  },
+
+  data() {
+    return {
+      settingsForm: {
+        roundCount: 6,
+        roundTime: 75,
+      },
+      copied: false,
+      onceFiltered: false,
+    };
+  },
+
+  computed: {
+    ...mapGetters({ players: "players", currentPlayer: "currentPlayer", playersExceptCurrent: "playersExceptCurrent", }),
+
+    roomUrl() {
+      const baseUrl = process.env.VUE_APP_SHARE_URL;
+      return `${baseUrl}?roomId=${this.$route.params.roomId}`;
     },
 
-    data() {
-      return {}
+    roomId() {
+      return this.$route.params.roomId;
     },
 
-    computed: {
-      ...mapGetters({players: 'players'}),
+    swiper() {
+      return this.$refs.mySwiper.$swiper;
+    },
+  },
 
-      swiper() {
-        return this.$refs.mySwiper.$swiper
-      }
+  methods: {
+    ...mapMutations(["removePlayer", "addPlayer", "configureRoom"]),
+
+    wrapRemovePlayer(player) {
+      this.$buefy.snackbar.open({
+        duration: 5000,
+        message: `${player.name} adlı oyuncuyu çıkarmak istediğinize emin misiniz?`,
+        actionText: "Oyundan At",
+        type: "is-danger",
+        position: "is-bottom-left",
+        queue: true,
+        onAction: () => {
+          this.removePlayer(player.soid);
+          this.$buefy.toast.open("Kullanıcı atıldı.");
+        },
+      });
     },
 
-    methods: {
-      ...mapMutations(['removePlayer']),
+    async copyRoomUrl() {
+      await navigator.clipboard.writeText(this.roomUrl);
+      this.copied = true;
+      setTimeout(() => {
+        this.copied = false;
+      }, 2000);
+    },
+
+    async saveGameSettings(data) {
+      return await axios.post(`rooms/${this.roomId}/update`, data);
+    },
+
+    startGame() {
+      this.$socket.emit("startGame", this.roomId);
+    },
+
+    preventNav(event) {
+      event.preventDefault();
+      event.returnValue = "";
+    },
+  },
+
+  beforeMount() {
+    window.addEventListener("beforeunload", this.preventNav);
+    this.$once("hook:beforeDestroy", () => {
+      window.removeEventListener("beforeunload", this.preventNav);
+    });
+  },
+
+  beforeRouteLeave(to, from, next) {
+    if (to.matched.some(route => route.name === "Game")) {
+      return next();
     }
-  }
+    if (!window.confirm("Ayrılmak istediğinize emin misiniz?")) {
+      this.$router.push({ name: "Registration" });
+      return;
+    }
+    next()
+  },
+
+  mounted() {
+    this.sockets.subscribe("playerJoined", (data) => {
+      const { roomId, connectedUser } = data;
+      if (!roomId) {
+        return;
+      }
+
+      this.addPlayer({
+          soid: connectedUser.soid,
+          name: connectedUser.name,
+          avatar: connectedUser.avatar,
+          points: 0,
+          isMaster: false,
+      });
+    });
+
+    this.sockets.subscribe("gameStarted", () => {
+      this.$router.push({ name: "Game", params: { roomId: this.roomId } });
+    });
+
+    this.sockets.subscribe("playerDisconnected", (playerId) => {
+      this.removePlayer(playerId);
+      console.log("user disconnected \n", this.players);
+    });
+  },
+
+  async updated() {
+    const {
+      data: { roomId },
+    } = await this.saveGameSettings(this.settingsForm);
+    this.configureRoom({ roomId, ...this.settingsForm });
+  },
+};
 </script>
 
 <style scoped>
-  .main-container {
-    height: 500px;
-  }
-  .custom-container {
-    padding: 10px;
-    height: 100%;
-  }
-  .flex-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  .avatars-container {
-    height: 100%;
-    padding-top: 30px;
-  }
-  .player-list-container {
-    height: 80%;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-  .players-footer-container {
-    height: 20%;
-  }
-  .copy-link-text {
-    font-size: 18px;
-    color: #1b66ff;
-  }
+.main-container {
+  height: 500px;
+}
+.custom-container {
+  padding: 10px;
+  height: 100%;
+}
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.avatars-container {
+  height: 100%;
+  padding-top: 30px;
+}
+.avatars-container img {
+  width: 128px;
+}
+.player-list-container {
+  height: 80%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.players-footer-container {
+  height: 20%;
+}
+.copy-link-text {
+  font-size: 18px;
+  color: #1b66ff;
+}
 </style>
