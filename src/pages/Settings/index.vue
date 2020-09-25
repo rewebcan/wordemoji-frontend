@@ -34,7 +34,7 @@
           <b-button
             type="button is-info is-fullwidth"
             @click="startGame"
-            :disabled="!currentPlayer.isMaster || Object.keys(players).length === 0"
+            :disabled="!currentPlayer.isMaster || Object.values(players).length <= 1"
           >Oyunu Başlat</b-button>
         </div>
       </div>
@@ -77,7 +77,7 @@
 <script>
 import { mapGetters, mapMutations } from "vuex";
 import Player from "./Components/player";
-import axios from "../../services/axios";
+import { roomService as RoomService } from "../../services/roomService";
 
 export default {
   components: {
@@ -96,7 +96,10 @@ export default {
   },
 
   computed: {
-    ...mapGetters({ players: "players", currentPlayer: "currentPlayer", playersExceptCurrent: "playersExceptCurrent", }),
+    ...mapGetters({
+      players: "players",
+      currentPlayer: "currentPlayer",
+    }),
 
     roomUrl() {
       const baseUrl = process.env.VUE_APP_SHARE_URL;
@@ -139,7 +142,8 @@ export default {
     },
 
     async saveGameSettings(data) {
-      return await axios.post(`rooms/${this.roomId}/update`, data);
+      console.log(data);
+      return await RoomService.updateRoom({roomId: this.roomId, ...data});
     },
 
     startGame() {
@@ -160,14 +164,14 @@ export default {
   },
 
   beforeRouteLeave(to, from, next) {
-    if (to.matched.some(route => route.name === "Game")) {
+    if (to.matched.some((route) => route.name === "Game")) {
       return next();
     }
     if (!window.confirm("Ayrılmak istediğinize emin misiniz?")) {
       this.$router.push({ name: "Registration" });
       return;
     }
-    next()
+    next();
   },
 
   mounted() {
@@ -178,11 +182,11 @@ export default {
       }
 
       this.addPlayer({
-          soid: connectedUser.soid,
-          name: connectedUser.name,
-          avatar: connectedUser.avatar,
-          points: 0,
-          isMaster: false,
+        soid: connectedUser.soid,
+        name: connectedUser.name,
+        avatar: connectedUser.avatar,
+        points: 0,
+        isMaster: false,
       });
     });
 

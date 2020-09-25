@@ -23,17 +23,19 @@
       <div class="adds has-background-white"></div>
     </div>
     <div class="column is-8 has-background-white has-text-left">
-      <h1 class="title">Lorem ipsum</h1>
+      <h1 class="title">Wordemoji!</h1>
       <p>
-        Lorem ipsum dolor sit amet consectetur, adipisicing elit. Fugiat tempore recusandae nemo sit eaque eveniet eos quaerat magni minima culpa,
-        provident magnam cupiditate ea consequuntur ipsum atque quis nesciunt nisi?
+        Arkadaşlarınla bir dizi emojinin hangi kelime olduğunu tahmin etmeye çalış ve oyunu kazan! <br>Eğlen!
       </p>
       <br />
-      <h1 class="title">Lorem ipsum</h1>
+      <h1 class="title">Nasıl Oynanır?</h1>
       <p>
-        Lorem ipsum dolor sit amet consectetur, adipisicing elit.
-        Fugiat tempore recusandae nemo sit eaque eveniet eos quaerat magni minima culpa, provident magnam cupiditate ea consequuntur ipsum atque quis nesciunt nisi? Lorem ipsum dolor sit amet, consectetur adipisicing elit. Itaque quas dicta quo officia eius aliquam qui, cupiditate deleniti fugit quibusdam hic,
-        praesentium reprehenderit? Voluptas eum ipsam placeat dignissimos voluptate. Maxime.
+        Kendine bir kullanıcı adı ve rastegele avatarlardan birini seç ve oyun(a) oluştur/katıl, 
+        arkadaşlarını paylaşabileceğin link ile davet et ve oyuna başla en çabuk ve en çok kelime tahmin eden kazanır! 
+      </p>
+      <br>
+      <p>
+        <a href="/privacy_tr.txt">Gizlilik</a>
       </p>
     </div>
   </div>
@@ -41,7 +43,7 @@
 
 <script>
 import { mapMutations, mapGetters } from "vuex";
-import axios from "../../services/axios";
+import { roomService as RoomService } from "../../services/roomService";
 
 export default {
   data() {
@@ -69,7 +71,7 @@ export default {
     },
   },
   methods: {
-    ...mapMutations(["setCurrentPlayer", "addPlayers"]),
+    ...mapMutations(["setCurrentPlayer", "addPlayers", "addPlayer", "configureRoom"]),
 
     randomAvatar() {
       const randIndex = Math.floor(Math.random() * 15);
@@ -81,24 +83,26 @@ export default {
     },
 
     async createRoom() {
-      const {
-        data: { roomId },
-      } = await axios.post("rooms", null);
+      this.roomId = await RoomService.createRoom();
+      if (!this.roomId) {
+        return;
+      }
 
-      this.roomId = roomId;
       this.$socket.emit("createRoom", {
-        roomId,
+        roomId: this.roomId,
         name: this.name,
         avatar: this.avatar,
       });
     },
 
     async joinRoom() {
-      const {
-        data: { roomId },
-      } = await axios.post(`rooms/${this.roomId}`);
+      const room = await RoomService.getRoom(this.roomId)
+      if (!room.roomId) {
+        return;
+      }
+
       this.$socket.emit("playerJoin", {
-        roomId: roomId,
+        roomId: room.roomId,
         name: this.currentPlayer.name,
         avatar: this.currentPlayer.avatar,
       });
@@ -130,11 +134,12 @@ export default {
           isMaster: true,
         });
         this.addPlayer({
+          soid: "masterUser",
           name: this.name,
           avatar: this.avatar,
           points: 0,
           isMaster: true,
-      });
+        });
         this.$router.push({
           name: "Settings",
           params: { roomId: this.roomId },
@@ -155,9 +160,9 @@ export default {
         points: 0,
         isMaster: false,
       });
-      
-      const filteredPlayers = players.filter((player) => player.soid !== this.$cookie.get("io"));
-      this.addPlayers(filteredPlayers, filteredPlayers);
+
+      this.addPlayers(players);
+
 
       this.$router.push({ name: "Settings", params: { roomId: this.roomId } });
     });

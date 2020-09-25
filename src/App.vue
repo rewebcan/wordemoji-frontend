@@ -1,5 +1,8 @@
 <template>
   <div id="app" class="has-text-centered">
+    <div class="header container">
+      <img src="/images/logo.png" alt="logo">
+    </div>
     <router-view></router-view>
   </div>
 </template>
@@ -22,7 +25,7 @@ body {
   min-height: 100%;
   align-items: center;
   justify-content: center;
-  background-color: #e2e2e2;
+  background: #e2e2e2 url("/images/background.png") repeat;
 }
 #app {
   width: 60%;
@@ -44,5 +47,14 @@ body {
   background-color: #e2e2e2;
   border-radius: 20px;
   border: 3px solid white;
+}
+.header {
+  display: flex;
+}
+.header img {
+  width: 100px;
+  margin-right: auto;
+  margin-left: 6px; 
+  margin-bottom: 10px;
 }
 </style>

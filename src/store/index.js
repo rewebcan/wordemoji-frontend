@@ -1,62 +1,104 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
-import createPersistedState from 'vuex-persistedstate';
+import Vue from "vue";
+import Vuex from "vuex";
+import createPersistedState from "vuex-persistedstate";
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 const store = new Vuex.Store({
-    plugins: [
-        createPersistedState({
-            paths: ['currentPlayer']
-        }),
-    ],
-    state: {
-        currentPlayer: {
-            name: '',
-            avatar: '',
-            isMaster: false
-        },
-        players: {},
-        game: {
-            roundCount: 0,
-            roundTime: 0,
-            roomId: '',
-            currentRound: 0,
-            currentPuzzle: '',
+  plugins: [
+    createPersistedState({
+      paths: ["currentPlayer"],
+    }),
+  ],
+  state: {
+    currentPlayer: {
+      name: "",
+      avatar: "",
+      isMaster: false,
+    },
+    players: {},
+    game: {
+      roundTime: 0,
+      roomId: "",
+      currentRound: 0,
+      currentPuzzle: {
+        puzzleEmojis: "",
+        puzzleAnswer: "",
+        puzzleTips: null,
+      },
+    },
+  },
+
+  getters: {
+    currentPlayer: (state) => state.currentPlayer,
+    players: (state) => state.players,
+    sortedPlayers: (state) =>
+      Object.fromEntries(
+        Object.entries(state.players).sort(([, a], [, b]) => b - a)
+      ),
+    game: (state) => state.game,
+    allPlayersAnswered: (state) => {
+      const countOfPlayers = Object.keys(state.players).length;
+      let countOfAnsweredPlayers = 0;
+
+      for (const key in state.players) {
+        if (state.players[key]) {
+          if (state.players[key].answered) {
+            countOfAnsweredPlayers++;
+          }
         }
+      }
+
+      return countOfPlayers == countOfAnsweredPlayers;
+    },
+  },
+
+  mutations: {
+    setCurrentPlayer(state, player) {
+      state.currentPlayer = player;
     },
 
-    getters: {
-        currentPlayer: state => state.currentPlayer,
-        players: state => state.players,
-        game: state => state.game,
+    addPlayer(state, player) {
+      state.players[player.soid] = player;
     },
 
-    mutations: {
-        setCurrentPlayer (state, player) {
-            state.currentPlayer = player
-        },
+    addPoint(state, { playerId, point }) {
+      let soid = playerId;
+      if (!state.players[soid]) {
+        soid = "masterUser";
+      }
+      state.players[soid].points += Number(point);
+    },
 
-        addPlayer (state, player) {
-            state.players[player.soid] = player
-        },
+    markPlayerAnswered(state, playerId) {
+      state.players[playerId].answered = true;
+    },
 
-        addPlayers (state, players) {
-            for (const player of players) {
-                state.players[player.soid] = player
-            }
-        },
-
-        removePlayer (state, deletedPlayer) {
-            // eslint-disable-next-line no-unused-vars
-            const { [deletedPlayer]: _, ...players } = state.players;
-            state.players = players
-        },
-
-        configureRoom (state, room) {
-            state.game = {...state.game, ...room}
+    markAllPlayerNotAnswered(state) {
+      for (const key in state.players) {
+        if (state.players[key]) {
+          const player = state.players[key];
+          player.answered = false;
         }
-    }
-})
+      }
+    },
 
-export default store
+    addPlayers(state, players) {
+      for (const player of players) {
+        state.players[player.soid] = player;
+      }
+    },
+
+    removePlayer(state, deletedPlayer) {
+      // eslint-disable-next-line no-unused-vars
+      const { [deletedPlayer]: _, ...players } = state.players;
+      state.players = players;
+    },
+
+    configureRoom(state, room) {
+      state.game = { ...state.game, ...room };
+    },
+  },
+});
+
+export default store;
