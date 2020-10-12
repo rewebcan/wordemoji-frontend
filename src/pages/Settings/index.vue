@@ -15,6 +15,7 @@
               expanded
               :disabled="!currentPlayer.isMaster"
             >
+              <option value="3">3</option>  
               <option value="6">6</option>
               <option value="9">9</option>
               <option value="12">12</option>
@@ -26,6 +27,7 @@
               expanded
               :disabled="!currentPlayer.isMaster"
             >
+              <option value="30">30</option>
               <option value="75">75</option>
               <option value="90">90</option>
               <option value="120">120</option>

@@ -7,7 +7,8 @@
             <span
               class="player-name"
               v-bind:class="{ 'correct-answer': message.correct }"
-            >{{ message.player ? message.player : ">>>" }}</span>
+              >{{ message.player ? message.player : ">>>" }}</span
+            >
             &nbsp;
             <span class="player-answer">{{ message.message }}</span>
           </div>
@@ -22,7 +23,9 @@
               @keyup.native.enter="sendMessage"
             ></b-input>
             <p class="control">
-              <button @click="sendMessage" class="button is-fullwidth is-info">Yolla</button>
+              <button @click="sendMessage" class="button is-fullwidth is-info">
+                Yolla
+              </button>
             </p>
           </b-field>
         </div>
@@ -30,7 +33,9 @@
     </div>
     <div class="column is-8 pb-0 pt-0 pl-0">
       <div class="info-main-container">
-        <div class="info-container columns pr-0 pb-3 pl-0 mb-0 mt-0 ml-0 mr-0 is-expanded">
+        <div
+          class="info-container columns pr-0 pb-3 pl-0 mb-0 mt-0 ml-0 mr-0 is-expanded"
+        >
           <div class="column is-8 pt-0 pl-0 pb-0">
             <div
               class="question-main-container flex-container pt-2 pr-2 pb-2 pl-2 has-background-white"
@@ -40,12 +45,17 @@
                 class="question-container has-background-white has-text-centered"
                 v-show="puzzleShow"
               >
-                <span class="puzzle-emojis">{{ game.currentPuzzle.puzzleEmojis }}</span>
+                <span class="puzzle-emojis">{{
+                  game.currentPuzzle.puzzleEmojis
+                }}</span>
                 <div class="puzzle-tips" v-if="game.currentPuzzle.puzzleTips">
                   <kbd
-                    v-for="(tip, index) in Object.values(game.currentPuzzle.puzzleTips)"
+                    v-for="(tip, index) in Object.values(
+                      game.currentPuzzle.puzzleTips
+                    )"
                     :key="index"
-                  >{{ tip }}&nbsp;</kbd>
+                    >{{ tip }}&nbsp;</kbd
+                  >
                 </div>
               </div>
               <div class="players-container px-3 py-3" v-show="pointsShow">
@@ -58,7 +68,12 @@
                   <li v-for="(player, index) in players" :key="index">
                     <div>
                       <span>
-                        <img :src="player.avatar" alt width="32px" height="32px" />
+                        <img
+                          :src="player.avatar"
+                          alt
+                          width="32px"
+                          height="32px"
+                        />
                       </span>
                       <span>{{ player.name }}</span>
                       <span>: {{ player.points }}</span>
@@ -81,7 +96,11 @@
             </div>
           </div>
           <div class="column is-4 has-background-white player-list-container">
-            <player v-for="(player, index) in players" :key="index" :player="player" />
+            <player
+              v-for="(player, index) in players"
+              :key="index"
+              :player="player"
+            />
           </div>
         </div>
       </div>
@@ -125,6 +144,7 @@ export default {
       puzzleTimer: null,
       finished: false,
       preRoundAnswer: "",
+      guessedMap: {},
     };
   },
 
@@ -141,7 +161,13 @@ export default {
   },
 
   methods: {
-    ...mapMutations(["removePlayer", "configureRoom", "addPoint"]),
+    ...mapMutations([
+      "removePlayer",
+      "configureRoom",
+      "addPoint",
+      "markPlayerAnswered",
+      "markAllPlayerNotAnswered",
+    ]),
 
     sendMessage() {
       const message = this.currentMessage.trim();
@@ -150,6 +176,7 @@ export default {
           roomId: this.game.roomId,
           player: this.currentPlayer.name,
           message: message,
+          checkForAnswer: !this.guessedMap[this.game.currentRound],
         });
         this.currentMessage = "";
       }
@@ -238,7 +265,9 @@ export default {
     this.sockets.subscribe(
       "answered",
       ({ player: { name, soid: playerId }, point }) => {
-        this.addPoint({playerId, point});
+        this.addPoint({ playerId, point });
+        // this.markPlayerAnswered(playerId);
+
         if (this.allPlayersAnswered) {
           this.messages.push({ message: "Herkes bildi! ", correct: true });
           this.$socket.emit("nextRound", {
@@ -246,6 +275,9 @@ export default {
             roomId: this.roomId,
           });
           return;
+        }
+        if (this.currentPlayer.name === name) {
+          this.guessedMap[this.game.currentRound] = true;
         }
         this.messages.push({ player: name, message: "bildi!", correct: true });
       }
@@ -256,7 +288,7 @@ export default {
     });
 
     this.sockets.subscribe("playerDisconnected", (playerId) => {
-     this.removePlayer(playerId);
+      this.removePlayer(playerId);
     });
 
     this.sockets.subscribe("chatMessage", ({ player, message }) => {

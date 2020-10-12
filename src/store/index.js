@@ -27,6 +27,7 @@ const store = new Vuex.Store({
         puzzleTips: null,
       },
     },
+    answerMap: {},
   },
 
   getters: {
@@ -48,7 +49,7 @@ const store = new Vuex.Store({
           }
         }
       }
-
+      console.log(countOfAnsweredPlayers);
       return countOfPlayers == countOfAnsweredPlayers;
     },
   },
@@ -71,7 +72,11 @@ const store = new Vuex.Store({
     },
 
     markPlayerAnswered(state, playerId) {
-      state.players[playerId].answered = true;
+      let soid = playerId;
+      if (!state.players[soid]) {
+        soid = "masterUser";
+      }
+      state.players[soid]["answered"] = true;
     },
 
     markAllPlayerNotAnswered(state) {
